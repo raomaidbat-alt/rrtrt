@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Смыслосинтез — экспорт для Figma</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--green-900); color:var(--cream-50); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+
+  /* ===== Top bar ===== */
+  .bar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+        gap:24px; padding:18px 40px; background:rgba(21,45,32,.86); backdrop-filter:blur(10px);
+        border-bottom:1px solid var(--line-on-dark); }
+  .bar-l{ display:flex; align-items:center; gap:18px; }
+  .bar-l img{ width:46px; height:auto; display:block; }
+  .bar-title{ display:flex; flex-direction:column; gap:2px; }
+  .bar-title b{ font-family:var(--font-display); font-weight:400; font-size:18px; letter-spacing:.16em; color:var(--cream-50); }
+  .bar-title span{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--on-dark-2); }
+  .bar-r{ display:flex; align-items:center; gap:18px; }
+  .count{ font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+  .btn{ font-family:var(--font-sans); font-weight:600; font-size:14px; letter-spacing:.08em;
+        color:var(--green-900); background:var(--gold); border:0; border-radius:var(--r-pill);
+        padding:13px 26px; cursor:pointer; transition:background var(--dur) var(--ease), transform .15s var(--ease); }
+  .btn:hover{ background:var(--gold-soft); }
+  .btn:active{ transform:scale(.98); }
+
+  /* ===== Page intro ===== */
+  .intro{ max-width:1180px; margin:0 auto; padding:88px 40px 36px; }
+  .intro .eyebrow{ font-weight:600; font-size:13px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold); }
+  .intro hr{ width:64px; height:2px; background:var(--gold); border:0; margin:22px 0; }
+  .intro h1{ font-family:var(--font-lead); font-weight:400; font-size:54px; line-height:1.12; max-width:18ch; color:var(--cream-50); }
+  .intro p{ font-size:18px; line-height:1.6; color:var(--on-dark-2); max-width:60ch; margin-top:22px; }
+
+  /* ===== Bands ===== */
+  .band{ max-width:1180px; margin:0 auto; padding:44px 40px 18px; }
+  .band-head{ display:flex; align-items:baseline; gap:22px; padding-bottom:26px; border-bottom:1px solid var(--line-on-dark); margin-bottom:38px; }
+  .band-no{ font-family:var(--font-display); font-weight:400; font-size:40px; color:var(--gold); letter-spacing:.04em; }
+  .band-name{ font-family:var(--font-display); font-weight:400; font-size:34px; letter-spacing:.1em; color:var(--cream-50); text-transform:uppercase; }
+  .band-meta{ margin-left:auto; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+
+  .row{ display:flex; flex-wrap:wrap; gap:30px; }
+
+  /* ===== Thumbnail (scaled story) ===== */
+  :root{ --s:.262; }
+  .thumb{ position:relative; width:calc(1080px*var(--s)); height:calc(1920px*var(--s));
+          border-radius:16px; overflow:hidden; cursor:pointer; box-shadow:0 14px 40px rgba(0,0,0,.34);
+          transition:transform .4s var(--ease), box-shadow .4s var(--ease); }
+  .thumb:hover{ transform:translateY(-6px); box-shadow:0 26px 60px rgba(0,0,0,.5); }
+  .thumb .story{ transform:scale(var(--s)); transform-origin:top left; }
+  .thumb .hint{ position:absolute; inset:auto 0 0 0; padding:34px 14px 12px; font-size:12px; letter-spacing:.1em;
+        text-transform:uppercase; color:#fff; text-align:center; opacity:0; transition:opacity .3s var(--ease);
+        background:linear-gradient(to top, rgba(0,0,0,.55), transparent); pointer-events:none; }
+  .thumb:hover .hint{ opacity:1; }
+
+  /* ===== STORY CANVAS (1080×1920) ===== */
+  .story{ width:1080px; height:1920px; position:relative; overflow:hidden; font-family:var(--font-sans); }
+  .story .pad{ position:absolute; inset:0; display:flex; flex-direction:column; padding:150px 112px 124px; z-index:3; }
+  .s-top{ display:flex; align-items:center; justify-content:space-between; }
+  .kicker{ font-weight:600; font-size:30px; letter-spacing:.32em; text-transform:uppercase; }
+  .idx{ font-weight:600; font-size:30px; letter-spacing:.12em; }
+  .s-body{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:52px; padding:48px 0; }
+  .rule{ width:104px; height:3px; background:var(--gold); border:0; }
+  .lead{ font-family:var(--font-lead); font-weight:400; font-size:80px; line-height:1.14; text-wrap:pretty; }
+  .lead.sm{ font-size:62px; }
+  .lead.lg{ font-size:96px; }
+  .note{ font-size:36px; line-height:1.5; text-wrap:pretty; }
+  .label{ font-weight:600; font-size:28px; letter-spacing:.26em; text-transform:uppercase; }
+  .s-foot{ display:flex; align-items:center; gap:22px; }
+  .s-foot .mark{ width:70px; height:auto; display:block; }
+  .m-dark{ display:none; }
+  .foot-wm{ font-family:var(--font-display); font-weight:400; font-size:32px; letter-spacing:.16em; }
+  .foot-sub{ margin-left:auto; font-size:24px; letter-spacing:.04em; }
+
+  /* Skins */
+  .story.green{ background:var(--green-900); color:var(--cream-50); }
+  .green .kicker{ color:var(--gold); } .green .idx{ color:var(--on-dark-2); }
+  .green .lead{ color:var(--cream-50); } .green .note{ color:var(--on-dark-2); }
+  .green .label{ color:var(--gold); } .green .foot-wm{ color:var(--gold-soft); } .green .foot-sub{ color:var(--on-dark-2); }
+  .green .ic{ color:var(--gold); }
+
+  .story.cream{ background:var(--cream); color:var(--ink); }
+  .cream .kicker{ color:#A8842E; } .cream .idx{ color:var(--fg3); }
+  .cream .lead{ color:var(--green); } .cream .note{ color:var(--fg2); }
+  .cream .label{ color:#A8842E; } .cream .foot-wm{ color:var(--green); } .cream .foot-sub{ color:var(--fg3); }
+  .cream .ic{ color:var(--gold); }
+
+  .story.gold{ background:var(--gold); color:var(--green-900); }
+  .gold .kicker{ color:var(--green-900); } .gold .idx{ color:rgba(21,45,32,.55); }
+  .gold .lead{ color:var(--green-900); } .gold .note{ color:rgba(21,45,32,.78); }
+  .gold .label{ color:var(--green-900); } .gold .rule{ background:var(--green-900); }
+  .gold .foot-wm{ color:var(--green-900); } .gold .foot-sub{ color:rgba(21,45,32,.6); }
+  .gold .m-gold{ display:none; } .gold .m-dark{ display:block; }
+  .gold .ic{ color:var(--green-900); }
+
+  /* Watermark monogram */
+  .wm-mono{ position:absolute; width:560px; height:auto; right:-90px; bottom:-70px; opacity:.06; z-index:1; }
+  .gold .wm-mono{ opacity:.10; }
+
+  /* Decorative icon */
+  .ic{ display:inline-flex; }
+  .ic svg{ display:block; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* Cover */
+  .story.cover .s-body{ justify-content:center; gap:0; }
+  .cover-num{ font-family:var(--font-display); font-weight:400; font-size:62px; letter-spacing:.1em; color:var(--gold); }
+  .cover-title{ font-family:var(--font-display); font-weight:400; line-height:.98; letter-spacing:.02em;
+                text-transform:uppercase; color:var(--cream-50); margin:38px 0 30px; font-size:150px; }
+  .cover-title.long{ font-size:120px; }
+  .cover-sub{ font-family:var(--font-lead); font-size:50px; line-height:1.25; color:var(--gold-soft); max-width:18ch; }
+  .cover-marble{ position:absolute; inset:0 0 auto 0; height:46%; width:100%; object-fit:cover;
+                 opacity:.16; mix-blend-mode:screen; -webkit-mask-image:linear-gradient(to bottom,#000,transparent);
+                 mask-image:linear-gradient(to bottom,#000,transparent); z-index:1; }
+
+  /* Formula flow */
+  .flow{ display:flex; flex-direction:column; gap:30px; }
+  .flow-step{ display:flex; align-items:center; gap:30px; }
+  .flow-chip{ font-family:var(--font-display); font-size:44px; letter-spacing:.04em; text-transform:uppercase;
+              color:var(--green); border:2px solid var(--gold); border-radius:var(--r-lg); padding:24px 38px; background:rgba(201,168,76,.10); }
+  .flow-desc{ font-size:32px; line-height:1.4; color:var(--fg2); }
+  .flow-arrow{ width:4px; height:46px; margin-left:48px; background:var(--gold); position:relative; }
+  .flow-arrow::after{ content:""; position:absolute; left:-9px; bottom:-2px; width:22px; height:22px;
+              border-right:4px solid var(--gold); border-bottom:4px solid var(--gold); transform:rotate(45deg); }
+
+  /* Big roman numeral stage */
+  .stage-num{ font-family:var(--font-display); font-weight:400; font-size:230px; line-height:.8; letter-spacing:.02em; }
+  .green .stage-num{ color:rgba(201,168,76,.92); } .cream .stage-num{ color:var(--gold); }
+  .stage-tag{ font-weight:600; font-size:30px; letter-spacing:.28em; text-transform:uppercase; }
+  .green .stage-tag{ color:var(--on-dark-2); } .cream .stage-tag{ color:var(--fg2); }
+
+  /* Staccato words */
+  .stacc{ display:flex; flex-direction:column; gap:6px; }
+  .stacc span{ font-family:var(--font-display); font-weight:400; font-size:104px; line-height:1.02; letter-spacing:.02em;
+               text-transform:uppercase; color:var(--cream-50); }
+  .stacc span:nth-child(even){ color:var(--gold); }
+
+  /* Course list */
+  .course-title{ font-family:var(--font-lead); font-size:74px; line-height:1.1; }
+  .green .course-title{ color:var(--cream-50); } .cream .course-title{ color:var(--green); }
+  .clist{ list-style:none; display:flex; flex-direction:column; gap:22px; margin-top:10px; }
+  .clist li{ display:flex; align-items:flex-start; gap:22px; font-size:34px; line-height:1.4; }
+  .green .clist li{ color:var(--on-dark-2); } .cream .clist li{ color:var(--fg2); }
+  .clist li::before{ content:""; flex:none; width:14px; height:14px; margin-top:14px; border-radius:50%; background:var(--gold); }
+
+  /* Stage head (roman numeral + tag) */
+  .stage-head{ display:flex; align-items:flex-end; gap:40px; }
+  .stage-head .stage-tag{ padding-bottom:38px; }
+
+  /* ===== Highlight covers (square 1080×1080) ===== */
+  .story.sq{ width:1080px; height:1080px; }
+  .sq-pad{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:3; }
+  .ic-lg svg{ width:300px; height:300px; }
+  .hl-ring{ position:absolute; left:50%; top:50%; width:780px; height:780px; transform:translate(-50%,-50%);
+            border:2px solid rgba(201,168,76,.45); border-radius:50%; z-index:2; }
+  .story.sq .wm-mono{ width:520px; right:auto; bottom:auto; left:50%; top:50%; transform:translate(-50%,-50%); opacity:.05; }
+
+  .hlrow{ display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start; }
+  .hlitem{ display:flex; flex-direction:column; align-items:center; gap:18px; width:calc(1080px*var(--s)); }
+  .thumb.sq{ height:calc(1080px*var(--s)); }
+  .thumb.circle{ border-radius:50%; box-shadow:0 0 0 4px var(--green-900), 0 0 0 6px rgba(201,168,76,.55), 0 14px 38px rgba(0,0,0,.4); }
+  .thumb.circle:hover{ box-shadow:0 0 0 4px var(--green-900), 0 0 0 6px var(--gold), 0 22px 52px rgba(0,0,0,.5); }
+  .hl-label{ font-weight:600; font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--on-dark-2); }
+
+  /* ===== Lightbox ===== */
+  .lb{ position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center;
+       background:rgba(10,22,16,.92); backdrop-filter:blur(6px); }
+  .lb.open{ display:flex; }
+  .lb-stage{ position:relative; }
+  .lb-thumb{ position:relative; border-radius:22px; overflow:hidden; box-shadow:0 40px 90px rgba(0,0,0,.6); }
+  .lb-thumb .story{ transform-origin:top left; }
+  .lb-nav{ position:absolute; top:50%; transform:translateY(-50%); width:62px; height:62px; border-radius:50%;
+           border:1px solid var(--line-on-dark); background:rgba(21,45,32,.7); color:var(--cream-50);
+           font-size:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+  .lb-nav:hover{ background:var(--green); }
+  .lb-prev{ left:-92px; } .lb-next{ right:-92px; }
+  .lb-bottom{ position:absolute; left:0; right:0; bottom:-78px; display:flex; align-items:center; justify-content:center; gap:18px; }
+  .lb-cap{ font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+  .lb-close{ position:fixed; top:24px; right:30px; width:50px; height:50px; border-radius:50%; border:1px solid var(--line-on-dark);
+             background:transparent; color:var(--cream-50); font-size:24px; cursor:pointer; }
+  .lb-close:hover{ background:rgba(255,255,255,.08); }
+
+  .toast{ position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(120%); z-index:200;
+          background:var(--green-800); border:1px solid var(--line-on-dark); color:var(--cream-50);
+          padding:14px 26px; border-radius:var(--r-pill); font-size:14px; letter-spacing:.04em;
+          box-shadow:var(--shadow-lg); transition:transform .45s var(--ease); }
+  .toast.show{ transform:translateX(-50%) translateY(0); }
+
+  footer.page-foot{ max-width:1180px; margin:0 auto; padding:60px 40px 90px; color:var(--on-dark-2); font-size:14px; letter-spacing:.04em; }
+
+  html,body{ background:#0e1a12; }
+  .exp-wrap{ display:flex; flex-direction:column; align-items:center; gap:60px; padding:80px 40px 140px; }
+  .exp-card{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .exp-frame{ position:relative; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .exp-cap{ font-family:var(--font-sans); font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--on-dark-2); }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#152D20"/>
+    <g fill="none" stroke="#C9A84C" stroke-width="3" stroke-linecap="round">
+      <path d="M40,50 C40,34 24,34 24,50 C24,66 40,66 50,50 C60,34 76,34 76,50 C76,66 60,66 50,50 Z"/>
+    </g>
+  </svg>
+</template>
+<div class="exp-wrap">
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1080px;">
+      <article class="story sq green" data-screen-label="Обложка · Смысл">
+                <div class="sq-pad">
+                  <span class="ic ic-lg"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="22"/><circle cx="50" cy="50" r="6.5" fill="currentColor" stroke="none"/></svg></span>
+                </div>
+                <div class="hl-ring"></div>
+                <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+              </article>
+    </div>
+    <div class="exp-cap">Обложка · Смысл</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1080px;">
+      <article class="story sq green" data-screen-label="Обложка · ЦССУ">
+                <div class="sq-pad">
+                  <span class="ic ic-lg"><svg viewBox="0 0 120 100"><path d="M44,50 C44,30 20,30 20,50 C20,70 44,70 60,50 C76,30 100,30 100,50 C100,70 76,70 60,50 Z"/></svg></span>
+                </div>
+                <div class="hl-ring"></div>
+                <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+              </article>
+    </div>
+    <div class="exp-cap">Обложка · ЦССУ</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1080px;">
+      <article class="story sq green" data-screen-label="Обложка · Академия">
+                <div class="sq-pad">
+                  <span class="ic ic-lg"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38"/><ellipse cx="50" cy="50" rx="16" ry="38"/><line x1="12" y1="50" x2="88" y2="50"/></svg></span>
+                </div>
+                <div class="hl-ring"></div>
+                <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+              </article>
+    </div>
+    <div class="exp-cap">Обложка · Академия</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1080px;">
+      <article class="story sq green" data-screen-label="Обложка · Обучение">
+                <div class="sq-pad">
+                  <span class="ic ic-lg"><svg viewBox="0 0 100 100"><path d="M50,30 C41,24 24,24 16,28 L16,72 C24,68 41,68 50,74 C59,68 76,68 84,72 L84,28 C76,24 59,24 50,30 Z"/><line x1="50" y1="30" x2="50" y2="74"/></svg></span>
+                </div>
+                <div class="hl-ring"></div>
+                <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+              </article>
+    </div>
+    <div class="exp-cap">Обложка · Обучение</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1080px;">
+      <article class="story sq green" data-screen-label="Обложка · Интеграция">
+                <div class="sq-pad">
+                  <span class="ic ic-lg"><svg viewBox="0 0 100 100"><circle cx="30" cy="34" r="9"/><circle cx="70" cy="34" r="9"/><circle cx="50" cy="70" r="9"/><path d="M39,34 L61,34 M34,42 L46,62 M66,42 L54,62"/></svg></span>
+                </div>
+                <div class="hl-ring"></div>
+                <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+              </article>
+    </div>
+    <div class="exp-cap">Обложка · Интеграция</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green cover" data-screen-label="СМЫСЛ · обложка">
+              <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смыслосинтез</span><span class="idx">Раздел 1 / 5</span></header>
+                <div class="s-body">
+                  <span class="cover-num">01</span>
+                  <h1 class="cover-title">Смысл</h1>
+                  <p class="cover-sub">Алгоритм проявления ценностей</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">СМЫСЛ · обложка</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="СМЫСЛ · 01">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смысл</span><span class="idx">01 / 04</span></header>
+                <div class="s-body">
+                  <span class="label">Формула А.В. Курбатова</span>
+                  <div class="flow">
+                    <div class="flow-step"><span class="flow-chip">Смысл</span><span class="flow-desc">алгоритм проявления ценностей</span></div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-step"><span class="flow-chip">Модели поведения</span><span class="flow-desc">формируются ценностями</span></div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-step"><span class="flow-chip">Успех</span><span class="flow-desc">определяется поведением</span></div>
+                  </div>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">СМЫСЛ · 01</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="СМЫСЛ · 02">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смысл</span><span class="idx">02 / 04</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="150" height="150" viewBox="0 0 100 100"><circle cx="22" cy="50" r="6"/><circle cx="50" cy="50" r="8"/><circle cx="80" cy="50" r="11"/><path d="M30,46 q10,-14 18,0"/><path d="M58,44 q12,-16 20,0"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead">Смыслы, как и ценности, — в постоянном движении.</p>
+                  <p class="note">Человек делает выбор: наблюдать за ними — или стать объектом манипуляции.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">СМЫСЛ · 02</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story gold" data-screen-label="СМЫСЛ · 03">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смысл</span><span class="idx">03 / 04</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="150" height="150" viewBox="0 0 100 100"><polyline points="12,74 40,52 56,62 88,24"/><polyline points="70,24 88,24 88,42"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Осмыслить актуальное ценностное ядро и воплотить его в созидательном действии — значит испытать счастье.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">СМЫСЛ · 03</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="СМЫСЛ · 04">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смысл</span><span class="idx">04 / 04</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="160" height="160" viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="6"/><rect x="30" y="30" width="40" height="40" rx="5"/><rect x="43" y="43" width="14" height="14" rx="3"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead">Смыслосинтез — путь от дихотомий к гармонии центров принятия решений.</p>
+                  <p class="note">Метод последовательных приближений.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">СМЫСЛ · 04</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green cover" data-screen-label="ЦССУ · обложка">
+              <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смыслосинтез</span><span class="idx">Раздел 2 / 5</span></header>
+                <div class="s-body">
+                  <span class="cover-num">02</span>
+                  <h1 class="cover-title">ЦССУ</h1>
+                  <p class="cover-sub">Технология ценностно-смыслового самоуправления</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · обложка</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ЦССУ · 01">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">ЦССУ</span><span class="idx">01 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="120" viewBox="0 0 120 70"><path d="M38,35 C38,18 18,18 18,35 C18,52 38,52 60,35 C82,18 102,18 102,35 C102,52 82,52 60,35 Z"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Технология ценностно-смыслового самоуправления.</p>
+                  <p class="note">Авторская разработка А.В. Курбатова. Путь к когнитивному суверенитету.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · 01</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ЦССУ · 02">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">ЦССУ</span><span class="idx">02 / 05</span></header>
+                <div class="s-body">
+                  <div class="stage-head"><span class="stage-num">I</span><span class="stage-tag">Этап технологии</span></div>
+                  <hr class="rule">
+                  <p class="lead sm">Диагностика личных ценностей.</p>
+                  <p class="note">Выявление истинных внутренних мотивов. Ценностное тело и ценностное ядро.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · 02</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ЦССУ · 03">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">ЦССУ</span><span class="idx">03 / 05</span></header>
+                <div class="s-body">
+                  <div class="stage-head"><span class="stage-num">II</span><span class="stage-tag">Этап технологии</span></div>
+                  <hr class="rule">
+                  <p class="lead sm">Смыслопостижение и Смыслосинтез.</p>
+                  <p class="note">Единение чувств и разума. Интеграция эмоционального и рационального познания.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · 03</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ЦССУ · 04">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">ЦССУ</span><span class="idx">04 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="110" viewBox="0 0 120 70"><line x1="10" y1="30" x2="48" y2="30"/><line x1="72" y1="44" x2="110" y2="44"/><path d="M48,30 l8,-9 M48,30 l8,9"/><path d="M72,44 l-8,-9 M72,44 l-8,9"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead">Нереализованные внутренние мотивы разрушают изнутри.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · 04</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story gold" data-screen-label="ЦССУ · 05">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">ЦССУ</span><span class="idx">05 / 05</span></header>
+                <div class="s-body">
+                  <span class="label">Результат</span>
+                  <p class="lead">Истинная самоидентификация.</p>
+                  <hr class="rule">
+                  <p class="note">Вы управляете смыслом — созидаете и совершенствуете его.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ЦССУ · 05</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green cover" data-screen-label="АКАДЕМИЯ · обложка">
+              <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смыслосинтез</span><span class="idx">Раздел 3 / 5</span></header>
+                <div class="s-body">
+                  <span class="cover-num">03</span>
+                  <h1 class="cover-title long">Академия</h1>
+                  <p class="cover-sub">Точных гуманитарных наук</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">АКАДЕМИЯ · обложка</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="АКАДЕМИЯ · 01">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Академия</span><span class="idx">01 / 04</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="160" height="160" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><circle cx="50" cy="50" r="24"/><circle cx="50" cy="50" r="7" fill="currentColor" stroke="none"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead lg">Научный подход к счастью.</p>
+                  <p class="note">Академия Точных Гуманитарных Наук.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">АКАДЕМИЯ · 01</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story gold" data-screen-label="АКАДЕМИЯ · 02">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Академия</span><span class="idx">02 / 04</span></header>
+                <div class="s-body">
+                  <span class="label">ЦССУ</span>
+                  <p class="lead lg">Ценностно-смысловой менеджмент.</p>
+                  <hr class="rule">
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">АКАДЕМИЯ · 02</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="АКАДЕМИЯ · 03">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Академия</span><span class="idx">03 / 04</span></header>
+                <div class="s-body">
+                  <div class="stacc"><span>Скорость</span><span>Дихотомии</span><span>Разрывы</span><span>Осмысление</span></div>
+                  <hr class="rule">
+                  <p class="note">Новые требования к человеку.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">АКАДЕМИЯ · 03</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="АКАДЕМИЯ · 04">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Академия</span><span class="idx">04 / 04</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="150" height="150" viewBox="0 0 100 100"><line x1="50" y1="18" x2="50" y2="80"/><line x1="24" y1="32" x2="76" y2="32"/><path d="M24,32 L14,54 a12,7 0 0 0 20,0 Z"/><path d="M76,32 L66,54 a12,7 0 0 0 20,0 Z"/><line x1="36" y1="82" x2="64" y2="82"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Субъектность и суверенность.</p>
+                  <p class="note">Целеполагание из истинных внутренних мотивов. Технология А.В. Курбатова для формирования когнитивного суверенитета человека.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">АКАДЕМИЯ · 04</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green cover" data-screen-label="ОБУЧЕНИЕ · обложка">
+              <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смыслосинтез</span><span class="idx">Раздел 4 / 5</span></header>
+                <div class="s-body">
+                  <span class="cover-num">04</span>
+                  <h1 class="cover-title">Обучение</h1>
+                  <p class="cover-sub">Авторские программы по технологии ЦССУ</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · обложка</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ОБУЧЕНИЕ · 01">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Обучение</span><span class="idx">01 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="120" viewBox="0 0 120 70"><path d="M38,35 C38,18 18,18 18,35 C18,52 38,52 60,35 C82,18 102,18 102,35 C102,52 82,52 60,35 Z"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Авторское обучение по технологии ЦССУ.</p>
+                  <p class="note">А.В. Курбатов. Онлайн. Индивидуально или в группе.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · 01</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ОБУЧЕНИЕ · 02">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Обучение</span><span class="idx">02 / 05</span></header>
+                <div class="s-body">
+                  <span class="label">I этап</span>
+                  <h2 class="course-title">«Идентичность и&nbsp;ценности»</h2>
+                  <ul class="clist">
+                    <li>Диагностика ценностей</li>
+                    <li>Личный толковый словарь</li>
+                    <li>Работа с наставником</li>
+                  </ul>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · 02</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ОБУЧЕНИЕ · 03">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Обучение</span><span class="idx">03 / 05</span></header>
+                <div class="s-body">
+                  <span class="label">II этап</span>
+                  <h2 class="course-title">«Смыслопостижение и&nbsp;Смыслосинтез»</h2>
+                  <ul class="clist">
+                    <li>Метод продолженного предложения</li>
+                    <li>Работа с мышлением и психикой</li>
+                  </ul>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · 03</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ОБУЧЕНИЕ · 04">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Обучение</span><span class="idx">04 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="160" height="160" viewBox="0 0 100 100"><circle cx="50" cy="38" r="18"/><path d="M20,84 a30,26 0 0 1 60,0"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead">Персональное обучение.</p>
+                  <p class="note">Индивидуальный формат работы.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · 04</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story gold" data-screen-label="ОБУЧЕНИЕ · 05">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Обучение</span><span class="idx">05 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="150" height="150" viewBox="0 0 100 100"><polyline points="12,74 40,52 56,62 88,24"/><polyline points="70,24 88,24 88,42"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Наставничество: управление ценностями и смыслами.</p>
+                  <p class="note">Для тех, кто готов к глубокой работе.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ОБУЧЕНИЕ · 05</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green cover" data-screen-label="ИНТЕГРАЦИЯ · обложка">
+              <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Смыслосинтез</span><span class="idx">Раздел 5 / 5</span></header>
+                <div class="s-body">
+                  <span class="cover-num">05</span>
+                  <h1 class="cover-title long">Интеграция</h1>
+                  <p class="cover-sub">Ценностно-смысловое управление командой</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · обложка</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ИНТЕГРАЦИЯ · 01">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Интеграция</span><span class="idx">01 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="110" viewBox="0 0 120 70"><line x1="10" y1="30" x2="48" y2="30"/><line x1="72" y1="44" x2="110" y2="44"/><path d="M48,30 l8,-9 M48,30 l8,9"/><path d="M72,44 l-8,-9 M72,44 l-8,9"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Ценностно-смысловые разрывы внутри команды — источник системного флаттера.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · 01</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ИНТЕГРАЦИЯ · 02">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Интеграция</span><span class="idx">02 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="120" viewBox="0 0 120 80"><circle cx="26" cy="26" r="11"/><circle cx="94" cy="26" r="11"/><circle cx="60" cy="58" r="11"/><path d="M37,26 L83,26 M30,36 L52,50 M90,36 L68,50" stroke-dasharray="4 8"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Разные ценностные системы — несогласованные решения.</p>
+                  <p class="note">Организация разрушается изнутри.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · 02</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story cream" data-screen-label="ИНТЕГРАЦИЯ · 03">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Интеграция</span><span class="idx">03 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="180" height="100" viewBox="0 0 120 60"><line x1="12" y1="30" x2="96" y2="30"/><polyline points="80,16 100,30 80,44"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead sm">Интеграция ЦССУ — переход от реактивного менеджмента к ценностно-смысловому.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · 03</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story green" data-screen-label="ИНТЕГРАЦИЯ · 04">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Интеграция</span><span class="idx">04 / 05</span></header>
+                <div class="s-body">
+                  <span class="label">Постиндустриальная парадигма</span>
+                  <p class="lead sm">Управление опирается не на материальные ресурсы, а на когнитивный потенциал осмысления.</p>
+                  <hr class="rule">
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · 04</div>
+  </div>
+  <div class="exp-card">
+    <div class="exp-frame" style="width:1080px;height:1920px;">
+      <article class="story gold" data-screen-label="ИНТЕГРАЦИЯ · 05">
+              <div class="pad">
+                <header class="s-top"><span class="kicker">Интеграция</span><span class="idx">05 / 05</span></header>
+                <div class="s-body">
+                  <span class="ic"><svg width="170" height="120" viewBox="0 0 120 70"><path d="M38,35 C38,18 18,18 18,35 C18,52 38,52 60,35 C82,18 102,18 102,35 C102,52 82,52 60,35 Z"/></svg></span>
+                  <hr class="rule">
+                  <p class="lead">Суверенная команда начинается с суверенного человека.</p>
+                </div>
+                <footer class="s-foot">
+                  <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+                  <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+                </footer>
+              </div>
+              <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+            </article>
+    </div>
+    <div class="exp-cap">ИНТЕГРАЦИЯ · 05</div>
+  </div>
+</div>
+</body>
+</html>

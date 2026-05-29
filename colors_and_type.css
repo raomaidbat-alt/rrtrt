@@ -1,0 +1,138 @@
+/* ============================================================================
+   СМЫСЛОСИНТЕЗ® — Design Tokens (colors + type)
+   Brand: Смыслосинтез (Юлия дизайн) — научная школа А.В. Курбатова, ЦССУ.
+   Voice: научный, но тёплый и понятный. Ценностно-смысловое управление.
+   Source of truth: Figma "Смыслосинтез.fig" (designer's own style tiles).
+   Import this file at the top of any artifact:  @import "colors_and_type.css";
+   ============================================================================ */
+
+/* ---- Fonts ----------------------------------------------------------------
+   Galderglynn Titling BK  → display headlines & uppercase eyebrow labels
+                             (UPPERCASE-ONLY titling face, wide & geometric)
+   Doloman Pavljenko        → warm lead text, pull-quotes, refined subheads
+   Manrope (Google Fonts)   → workhorse: body copy, UI, dense / small text
+   --------------------------------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap");
+
+@font-face {
+  font-family: "Galderglynn Titling";
+  src: url("fonts/galderglynntitlingbk_regular.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Doloman Pavljenko";
+  src: url("fonts/DolomanPavljenko.otf") format("opentype");
+  font-weight: 300 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---- Brand palette (hex from the designer's own moodboard tiles) -------- */
+  --green-900: #152D20;  /* darkest — cover / hero backgrounds            */
+  --green-800: #1B3428;  /* card fill on dark, panels                     */
+  --green:     #1C3A2F;  /* PRIMARY brand green — surfaces, headlines     */
+  --gold:      #C9A84C;  /* ACCENT — monogram, rules, eyebrows, emphasis  */
+  --gold-soft: #D8BD72;  /* lighter gold for hovers / on-dark text        */
+
+  /* ---- Neutrals (warm) --------------------------------------------------- */
+  --cream-50:  #FFFCF6;  /* lightest cream — text on green                */
+  --parchment: #F8F4EC;  /* warm surface                                  */
+  --cream:     #F5F2EC;  /* NEUTRAL surface — primary light background    */
+  --white:     #F5F5F5;  /* cool white surface                            */
+  --ink:       #15201A;  /* near-black green — body text on light         */
+
+  /* ---- Warm supporting tones (use sparingly, ≤1 per composition) -------- */
+  --brick:     #B5763A;  /* terracotta — warmth, earthiness               */
+  --sand:      #E8D5B0;  /* soft sand — quiet warm fill                   */
+  --amber:     #D4821A;  /* amber — high-energy accent (rare)             */
+
+  /* ---- Semantic surface / text ------------------------------------------ */
+  --bg:            var(--cream);
+  --surface:       var(--cream-50);
+  --fg1:           var(--ink);       /* primary text on light              */
+  --fg2:           #4A5A50;          /* secondary / muted on light         */
+  --fg3:           #8A958D;          /* tertiary / captions on light       */
+  --on-dark-1:     var(--cream-50);  /* primary text on green              */
+  --on-dark-2:     #C4D2C8;          /* secondary text on green            */
+  --line:          #1c3a2f1f;        /* hairline divider on light          */
+  --line-on-dark:  #ffffff1f;        /* hairline divider on dark           */
+
+  /* ---- Type families ----------------------------------------------------- */
+  --font-display: "Galderglynn Titling", "Arial Narrow", sans-serif;
+  --font-lead:    "Doloman Pavljenko", "Manrope", sans-serif;
+  --font-sans:    "Manrope", system-ui, -apple-system, sans-serif;
+
+  /* ---- Type scale (px; from Figma: 100 / 50 / 39 / 35 / 25 / 20) --------- */
+  --t-display:  100px;  /* hero numerals / big РИЛС-style words            */
+  --t-h1:        64px;
+  --t-h2:        50px;   /* section headers (BIO, стиль)                   */
+  --t-h3:        39px;
+  --t-h4:        28px;
+  --t-lead:      24px;   /* lead paragraphs                                */
+  --t-body:      18px;
+  --t-small:     15px;
+  --t-caption:   13px;
+  --t-eyebrow:   13px;
+
+  --lh-tight: 1.0;
+  --lh-snug:  1.2;
+  --lh-body:  1.55;
+
+  /* ---- Spacing (8px base) ------------------------------------------------ */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+  /* ---- Radii (Figma cards = 20px) --------------------------------------- */
+  --r-sm: 8px;  --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+
+  /* ---- Elevation (soft, warm-tinted; brand is flat-leaning) ------------- */
+  --shadow-sm: 0 1px 2px rgba(21,45,32,.06);
+  --shadow-md: 0 8px 24px rgba(21,45,32,.10);
+  --shadow-lg: 0 24px 60px rgba(21,45,32,.16);
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease: cubic-bezier(.22,.61,.36,1);   /* calm, settled ease-out         */
+  --dur:  .45s;
+}
+
+/* ===== Semantic type roles =================================================
+   Apply these classes (or copy the rules) for consistent typography.
+   ========================================================================= */
+.ss-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--t-eyebrow);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.ss-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--t-display);
+  line-height: var(--lh-tight);
+  letter-spacing: .01em;
+  text-transform: uppercase;   /* Galderglynn is a titling face */
+}
+.ss-h1 { font-family: var(--font-display); font-weight: 400; font-size: var(--t-h1);
+         line-height: var(--lh-tight); text-transform: uppercase; letter-spacing: .01em; }
+.ss-h2 { font-family: var(--font-display); font-weight: 400; font-size: var(--t-h2);
+         line-height: var(--lh-snug); text-transform: uppercase; letter-spacing: .01em; }
+.ss-lead {
+  font-family: var(--font-lead);
+  font-weight: 400;
+  font-size: var(--t-lead);
+  line-height: 1.4;
+}
+.ss-h3 { font-family: var(--font-lead); font-weight: 400; font-size: var(--t-h3); line-height: var(--lh-snug); }
+.ss-h4 { font-family: var(--font-sans);  font-weight: 600; font-size: var(--t-h4); line-height: var(--lh-snug); }
+.ss-body { font-family: var(--font-sans); font-weight: 400; font-size: var(--t-body); line-height: var(--lh-body); }
+.ss-small { font-family: var(--font-sans); font-weight: 400; font-size: var(--t-small); line-height: 1.5; }
+.ss-caption { font-family: var(--font-sans); font-weight: 500; font-size: var(--t-caption);
+              letter-spacing: .02em; color: var(--fg3); }
+
+/* Gold rule divider — a recurring brand motif (short underline). */
+.ss-rule { width: 48px; height: 2px; background: var(--gold); border: 0; }

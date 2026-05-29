@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Смыслосинтез — Карусели</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--green-900); color:var(--cream-50); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+
+  /* ===== Top bar ===== */
+  .bar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+        gap:24px; padding:18px 40px; background:rgba(21,45,32,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line-on-dark); }
+  .bar-l{ display:flex; align-items:center; gap:18px; }
+  .bar-l img{ width:46px; height:auto; display:block; }
+  .bar-title{ display:flex; flex-direction:column; gap:2px; }
+  .bar-title b{ font-family:var(--font-display); font-weight:400; font-size:18px; letter-spacing:.16em; color:var(--cream-50); }
+  .bar-title span{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--on-dark-2); }
+  .bar-r{ display:flex; align-items:center; gap:18px; }
+  .count{ font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+  .btn{ font-family:var(--font-sans); font-weight:600; font-size:14px; letter-spacing:.08em; color:var(--green-900);
+        background:var(--gold); border:0; border-radius:var(--r-pill); padding:13px 26px; cursor:pointer;
+        transition:background var(--dur) var(--ease), transform .15s var(--ease); }
+  .btn:hover{ background:var(--gold-soft); } .btn:active{ transform:scale(.98); }
+
+  /* ===== Intro ===== */
+  .intro{ max-width:1180px; margin:0 auto; padding:88px 40px 36px; }
+  .intro .eyebrow{ font-weight:600; font-size:13px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold); }
+  .intro hr{ width:64px; height:2px; background:var(--gold); border:0; margin:22px 0; }
+  .intro h1{ font-family:var(--font-lead); font-weight:400; font-size:54px; line-height:1.12; max-width:20ch; color:var(--cream-50); }
+  .intro p{ font-size:18px; line-height:1.6; color:var(--on-dark-2); max-width:62ch; margin-top:22px; }
+
+  /* ===== Bands ===== */
+  .band{ max-width:1180px; margin:0 auto; padding:46px 40px 18px; }
+  .band-head{ display:flex; align-items:baseline; gap:22px; padding-bottom:26px; border-bottom:1px solid var(--line-on-dark); margin-bottom:38px; }
+  .band-no{ font-family:var(--font-display); font-weight:400; font-size:40px; color:var(--gold); letter-spacing:.04em; }
+  .band-name{ font-family:var(--font-display); font-weight:400; font-size:30px; letter-spacing:.08em; color:var(--cream-50); text-transform:uppercase; }
+  .band-meta{ margin-left:auto; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+  .row{ display:flex; flex-wrap:wrap; gap:26px; }
+
+  /* ===== Thumbnail (scaled slide) ===== */
+  :root{ --s:.233; }
+  .thumb{ position:relative; width:calc(1080px*var(--s)); height:calc(1350px*var(--s));
+          border-radius:14px; overflow:hidden; cursor:pointer; box-shadow:0 14px 38px rgba(0,0,0,.34);
+          transition:transform .4s var(--ease), box-shadow .4s var(--ease); }
+  .thumb:hover{ transform:translateY(-6px); box-shadow:0 24px 56px rgba(0,0,0,.5); }
+  .thumb .slide{ transform:scale(var(--s)); transform-origin:top left; }
+  .thumb .hint{ position:absolute; inset:auto 0 0 0; padding:30px 14px 12px; font-size:11px; letter-spacing:.1em;
+        text-transform:uppercase; color:#fff; text-align:center; opacity:0; transition:opacity .3s var(--ease);
+        background:linear-gradient(to top, rgba(0,0,0,.55), transparent); pointer-events:none; }
+  .thumb:hover .hint{ opacity:1; }
+
+  /* ===== SLIDE CANVAS (1080×1350) ===== */
+  .slide{ width:1080px; height:1350px; position:relative; overflow:hidden; font-family:var(--font-sans); --accent:var(--gold); --accent-soft:var(--gold-soft); }
+  .slide .pad{ position:absolute; inset:0; display:flex; flex-direction:column; padding:120px 92px 96px; z-index:3; }
+  .prog{ display:flex; gap:10px; color:var(--gold); }
+  .prog i{ flex:1; height:7px; border-radius:4px; background:currentColor; opacity:.22; }
+  .prog i.on{ opacity:1; }
+  .c-top{ display:flex; align-items:center; justify-content:space-between; margin-top:34px; }
+  .kicker{ font-weight:600; font-size:27px; letter-spacing:.26em; text-transform:uppercase; }
+  .idx{ font-weight:600; font-size:27px; letter-spacing:.1em; }
+  .c-body{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:42px; padding:40px 0; }
+  .rule{ width:104px; height:3px; background:var(--gold); border:0; }
+  .lead{ font-family:var(--font-lead); font-weight:400; font-size:78px; line-height:1.12; text-wrap:pretty; }
+  .lead.sm{ font-size:60px; } .lead.lg{ font-size:96px; }
+  .body{ font-size:39px; line-height:1.5; text-wrap:pretty; }
+  .body b{ font-weight:400; }
+  .label{ font-weight:600; font-size:27px; letter-spacing:.24em; text-transform:uppercase; }
+  .c-foot{ display:flex; align-items:center; gap:20px; }
+  .c-foot .mark{ width:62px; height:auto; display:block; }
+  .m-dark{ display:none; }
+  .foot-wm{ font-family:var(--font-display); font-weight:400; font-size:29px; letter-spacing:.16em; }
+  .foot-cta{ margin-left:auto; font-weight:600; font-size:30px; letter-spacing:.02em; display:flex; align-items:center; gap:12px; }
+  .swipe{ margin-left:auto; font-weight:600; font-size:27px; letter-spacing:.08em; display:flex; align-items:center; gap:14px; }
+  .swipe .arr{ animation:nudge 1.4s var(--ease) infinite; }
+  @keyframes nudge{ 0%,100%{ transform:translateX(0);} 50%{ transform:translateX(10px);} }
+
+  /* big number */
+  .num-wrap{ display:flex; align-items:flex-start; gap:24px; }
+  .cnum{ font-family:var(--font-display); font-weight:400; font-size:300px; line-height:.82; letter-spacing:.01em; }
+  .cunit{ font-family:var(--font-lead); font-size:64px; margin-top:30px; }
+  .hl{ font-size:42px; line-height:1.45; }
+
+  /* lists */
+  .clist{ list-style:none; display:flex; flex-direction:column; gap:26px; }
+  .clist li{ display:flex; align-items:flex-start; gap:24px; font-size:42px; line-height:1.32; font-family:var(--font-lead); }
+  .clist li::before{ content:""; flex:none; width:15px; height:15px; margin-top:20px; border-radius:50%; background:var(--gold); }
+
+  /* relation / formula */
+  .rel{ display:flex; flex-direction:column; gap:30px; }
+  .rel-row{ display:flex; align-items:center; gap:26px; font-family:var(--font-display); text-transform:uppercase;
+            font-size:46px; letter-spacing:.02em; }
+  .rel-up{ color:var(--gold); font-size:60px; line-height:.8; }
+
+  /* flow steps */
+  .steps{ display:flex; flex-direction:column; gap:20px; }
+  .step{ display:flex; align-items:center; gap:26px; }
+  .step .dot{ flex:none; width:64px; height:64px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center;
+              font-family:var(--font-display); font-size:32px; color:var(--gold); }
+  .step .lbl{ font-family:var(--font-lead); font-size:46px; line-height:1.1; }
+  .step-bar{ width:2px; height:30px; margin-left:31px; background:var(--gold); opacity:.5; }
+
+  /* ===== Skins (accent-driven) ===== */
+  /* dark green — uses brighter accent-soft for legibility on dark */
+  .slide.green{ background:var(--green-900); color:var(--cream-50); }
+  .green .kicker{ color:var(--accent-soft); } .green .idx{ color:var(--on-dark-2); } .green .prog{ color:var(--accent-soft); }
+  .green .lead{ color:var(--cream-50); } .green .body{ color:var(--on-dark-2); } .green .body b{ color:var(--accent-soft); }
+  .green .label{ color:var(--accent-soft); } .green .foot-wm{ color:var(--gold-soft); } .green .cnum{ color:var(--accent-soft); }
+  .green .cunit{ color:var(--on-dark-2); } .green .hl{ color:var(--cream-50); } .green .hl b{ color:var(--accent-soft); }
+  .green .step .lbl{ color:var(--cream-50); } .green .rel-row{ color:var(--cream-50); } .green .swipe{ color:var(--accent-soft); }
+  .green .ic{ color:var(--accent-soft); } .green .rule{ background:var(--accent-soft); }
+  .green .clist li::before{ background:var(--accent-soft); } .green .rel-up{ color:var(--accent-soft); }
+  .green .step .dot{ border-color:var(--accent-soft); color:var(--accent-soft); } .green .step-bar{ background:var(--accent-soft); }
+
+  /* light surfaces: cream / sand / parchment */
+  .slide.cream{ background:var(--cream); color:var(--ink); }
+  .slide.sand{ background:#EFE2C6; color:var(--ink); }
+  .slide.parchment{ background:var(--parchment); color:var(--ink); }
+  .cream .kicker,.sand .kicker,.parchment .kicker{ color:var(--accent); }
+  .cream .idx,.sand .idx,.parchment .idx{ color:var(--fg3); }
+  .cream .prog,.sand .prog,.parchment .prog{ color:var(--accent); }
+  .cream .lead,.sand .lead,.parchment .lead{ color:var(--green); }
+  .cream .body,.sand .body,.parchment .body{ color:var(--fg2); }
+  .cream .body b,.sand .body b,.parchment .body b{ color:var(--accent); }
+  .cream .label,.sand .label,.parchment .label{ color:var(--accent); }
+  .cream .foot-wm,.sand .foot-wm,.parchment .foot-wm{ color:var(--green); }
+  .cream .cnum,.sand .cnum,.parchment .cnum{ color:var(--accent); }
+  .cream .cunit,.sand .cunit,.parchment .cunit{ color:var(--fg2); }
+  .cream .hl,.sand .hl,.parchment .hl{ color:var(--green); }
+  .cream .hl b,.sand .hl b,.parchment .hl b{ color:var(--accent); }
+  .cream .step .lbl,.sand .step .lbl,.parchment .step .lbl{ color:var(--green); }
+  .cream .rel-row,.sand .rel-row,.parchment .rel-row{ color:var(--green); }
+  .cream .ic,.sand .ic,.parchment .ic{ color:var(--accent); }
+  .cream .swipe,.sand .swipe,.parchment .swipe{ color:var(--accent); }
+  .cream .rule,.sand .rule,.parchment .rule{ background:var(--accent); }
+  .cream .clist li::before,.sand .clist li::before,.parchment .clist li::before{ background:var(--accent); }
+  .cream .rel-up,.sand .rel-up,.parchment .rel-up{ color:var(--accent); }
+  .cream .step .dot,.sand .step .dot,.parchment .step .dot{ border-color:var(--accent); color:var(--accent); }
+  .cream .step-bar,.sand .step-bar,.parchment .step-bar{ background:var(--accent); }
+
+  /* strong CTA: gold / amber (dark text) */
+  .slide.gold{ background:var(--gold); color:var(--green-900); }
+  .slide.amber{ background:var(--amber); color:#23170a; }
+  .gold .kicker,.amber .kicker{ color:var(--green-900); } .gold .idx,.amber .idx{ color:rgba(21,45,32,.55); }
+  .gold .prog,.amber .prog{ color:var(--green-900); } .gold .lead,.amber .lead{ color:var(--green-900); }
+  .gold .body,.amber .body{ color:rgba(21,45,32,.82); } .gold .label,.amber .label{ color:var(--green-900); }
+  .gold .rule,.amber .rule{ background:var(--green-900); } .gold .foot-wm,.amber .foot-wm{ color:var(--green-900); }
+  .gold .foot-cta,.amber .foot-cta{ color:var(--green-900); } .gold .ic,.amber .ic{ color:var(--green-900); }
+  .gold .m-gold,.amber .m-gold{ display:none; } .gold .m-dark,.amber .m-dark{ display:block; }
+
+  /* strong CTA: brick (light text) */
+  .slide.brick{ background:var(--brick); color:#fff7ec; }
+  .brick .kicker{ color:#ffe6c4; } .brick .idx{ color:rgba(255,247,236,.6); } .brick .prog{ color:#ffe6c4; }
+  .brick .lead{ color:#fff7ec; } .brick .body{ color:rgba(255,247,236,.88); } .brick .label{ color:#ffe6c4; }
+  .brick .rule{ background:#ffe6c4; } .brick .foot-wm{ color:#fff7ec; } .brick .foot-cta{ color:#fff7ec; } .brick .ic{ color:#ffe6c4; }
+
+  /* cover variants */
+  .cover.cream .cover-marble,.cover.sand .cover-marble,.cover.parchment .cover-marble{ display:none; }
+  .cover.marble-strong .cover-marble{ height:64%; opacity:.24; }
+
+  /* subtle stone texture under content (keeps text legible) */
+  .slide:not(.cover)::after{ content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+        background-image:url("assets/hero-texture.jpg"); background-size:cover; background-position:center; }
+  .green::after{ mix-blend-mode:screen; opacity:.07; }
+  .cream::after,.sand::after,.parchment::after{ mix-blend-mode:multiply; opacity:.09; }
+  .gold::after,.amber::after{ mix-blend-mode:multiply; opacity:.06; }
+  .brick::after{ mix-blend-mode:soft-light; opacity:.16; }
+
+  /* watermark + cover marble */
+  .wm-mono{ position:absolute; width:520px; height:auto; right:-80px; bottom:-60px; opacity:.06; z-index:1; }
+  .gold .wm-mono{ opacity:.1; }
+  .cover-marble{ position:absolute; inset:0 0 auto 0; height:50%; width:100%; object-fit:cover; opacity:.16; mix-blend-mode:screen;
+                 -webkit-mask-image:linear-gradient(to bottom,#000,transparent); mask-image:linear-gradient(to bottom,#000,transparent); z-index:1; }
+  .ic{ display:inline-flex; }
+  .ic svg{ display:block; fill:none; stroke:currentColor; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* cover */
+  .slide.cover .c-body{ gap:30px; }
+  .cover-tag{ font-weight:600; font-size:27px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); }
+
+  /* ===== Lightbox ===== */
+  .lb{ position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; background:rgba(10,22,16,.92); backdrop-filter:blur(6px); }
+  .lb.open{ display:flex; }
+  .lb-stage{ position:relative; }
+  .lb-thumb{ position:relative; border-radius:18px; overflow:hidden; box-shadow:0 40px 90px rgba(0,0,0,.6); }
+  .lb-thumb .slide{ transform-origin:top left; }
+  .lb-nav{ position:absolute; top:50%; transform:translateY(-50%); width:62px; height:62px; border-radius:50%; border:1px solid var(--line-on-dark);
+           background:rgba(21,45,32,.7); color:var(--cream-50); font-size:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+  .lb-nav:hover{ background:var(--green); } .lb-prev{ left:-92px; } .lb-next{ right:-92px; }
+  .lb-bottom{ position:absolute; left:0; right:0; bottom:-78px; display:flex; align-items:center; justify-content:center; gap:18px; }
+  .lb-cap{ font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-dark-2); }
+  .lb-close{ position:fixed; top:24px; right:30px; width:50px; height:50px; border-radius:50%; border:1px solid var(--line-on-dark); background:transparent; color:var(--cream-50); font-size:24px; cursor:pointer; }
+  .lb-close:hover{ background:rgba(255,255,255,.08); }
+  .toast{ position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(120%); z-index:200; background:var(--green-800);
+          border:1px solid var(--line-on-dark); color:var(--cream-50); padding:14px 26px; border-radius:var(--r-pill); font-size:14px; box-shadow:var(--shadow-lg); transition:transform .45s var(--ease); }
+  .toast.show{ transform:translateX(-50%) translateY(0); }
+  footer.page-foot{ max-width:1180px; margin:0 auto; padding:60px 40px 90px; color:var(--on-dark-2); font-size:14px; letter-spacing:.04em; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-l">
+    <img src="assets/monogram-gold.png" alt="Смыслосинтез">
+    <div class="bar-title"><b>СМЫСЛОСИНТЕЗ</b><span>Карусели для ленты</span></div>
+  </div>
+  <div class="bar-r">
+    <span class="count" id="count">5 каруселей · 30 слайдов · 1080×1350</span>
+    <button class="btn" id="dlAll">Скачать все PNG</button>
+  </div>
+</div>
+
+<section class="intro">
+  <div class="eyebrow">Контент для ленты</div>
+  <hr>
+  <h1>Пять каруселей о ценностно-смысловом управлении.</h1>
+  <p>Сильные обложки-хуки, индикатор прогресса и золотой призыв в финале — чтобы читали до конца. Нажмите на слайд, чтобы открыть крупно и скачать PNG.</p>
+</section>
+
+<!-- ============ КАРУСЕЛЬ 1 · КРИЗИС ОБРАЗОВАНИЯ ============ -->
+<section class="band" style="--accent:#D4821A;--accent-soft:#E2A256;">
+  <div class="band-head">
+    <span class="band-no">01</span>
+    <span class="band-name">Кризис образования</span>
+    <span class="band-meta">6 слайдов</span>
+  </div>
+  <div class="row">
+
+    <!-- 1 cover -->
+    <div class="thumb" data-name="k1-1">
+      <article class="slide green cover" data-screen-label="К1 · 1/6">
+        <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Глобальные вызовы</span><span class="idx">01</span></header>
+          <div class="c-body">
+            <p class="lead">Система образования создавалась для другого мира.</p>
+            <hr class="rule">
+            <p class="lead sm" style="color:#E2A256">И этот мир давно исчез.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+            <span class="swipe">Листайте <span class="arr">→</span></span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <!-- 2 fact -->
+    <div class="thumb" data-name="k1-2">
+      <article class="slide green" data-screen-label="К1 · 2/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Факт</span><span class="idx">02</span></header>
+          <div class="c-body">
+            <div class="num-wrap"><span class="cnum">25</span><span class="cunit">лет</span></div>
+            <p class="lead sm">Столько длится стандартный цикл подготовки специалиста.</p>
+            <p class="hl">За это время знания в мире обновляются <b>50 раз</b>.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <!-- 3 story -->
+    <div class="thumb" data-name="k1-3">
+      <article class="slide cream" data-screen-label="К1 · 3/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">История</span><span class="idx">03</span></header>
+          <div class="c-body">
+            <span class="label">1968 год</span>
+            <p class="lead sm">Кризис заметили полвека назад.</p>
+            <p class="body">Экономист Филипп Кумбс описал его ещё в 1968-м: образование не успевает за миром. С тех пор разрыв только вырос.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <!-- 4 consequence -->
+    <div class="thumb" data-name="k1-4">
+      <article class="slide green" data-screen-label="К1 · 4/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Следствие</span><span class="idx">04</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="150" height="110" viewBox="0 0 120 70"><line x1="10" y1="30" x2="48" y2="30"/><line x1="72" y1="44" x2="110" y2="44"/><path d="M48,30 l8,-9 M48,30 l8,9"/><path d="M72,44 l-8,-9 M72,44 l-8,9"/></svg></span>
+            <p class="lead sm">Результат — парадокс.</p>
+            <p class="body">Дефицит кадров в новых отраслях — и одновременно массовая безработица среди дипломированных специалистов.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <!-- 5 conclusion -->
+    <div class="thumb" data-name="k1-5">
+      <article class="slide cream" data-screen-label="К1 · 5/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <header class="c-top"><span class="kicker">Вывод</span><span class="idx">05</span></header>
+          <div class="c-body">
+            <p class="lead">Это фундаментальный вызов.</p>
+            <hr class="rule">
+            <p class="body">Кризис образования первичен: именно через него решаются все остальные вызовы человечества.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <!-- 6 cta -->
+    <div class="thumb" data-name="k1-6">
+      <article class="slide amber" data-screen-label="К1 · 6/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <header class="c-top"><span class="kicker">Что делать</span><span class="idx">06</span></header>
+          <div class="c-body">
+            <p class="lead">Развивать навык осмысления.</p>
+            <hr class="rule">
+            <p class="body">Не потреблять знания — создавать их. Технология ЦССУ академика А.В. Курбатова.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+            <span class="foot-cta">Подробнее в Telegram →</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ КАРУСЕЛЬ 2 · ОСМЫСЛЕНИЕ ============ -->
+<section class="band" style="--accent:#C9A84C;--accent-soft:#D8BD72;">
+  <div class="band-head">
+    <span class="band-no">02</span>
+    <span class="band-name">Осмысление</span>
+    <span class="band-meta">6 слайдов</span>
+  </div>
+  <div class="row">
+
+    <div class="thumb" data-name="k2-1">
+      <article class="slide cream cover" data-screen-label="К2 · 1/6">
+        <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Когнитивный навык</span><span class="idx">01</span></header>
+          <div class="c-body">
+            <p class="lead">Осмысление — это не размышление.</p>
+            <hr class="rule">
+            <p class="lead sm" style="color:#A8842E">Это навык. И его можно потерять.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="swipe">Листайте <span class="arr">→</span></span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k2-2">
+      <article class="slide cream" data-screen-label="К2 · 2/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Определение</span><span class="idx">02</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="140" height="140" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="22"/><circle cx="50" cy="50" r="6.5" fill="currentColor" stroke="none"/></svg></span>
+            <p class="lead sm">Что такое осмысление?</p>
+            <p class="body">Способность воспринимать информацию, соотносить её с ценностным ядром и принимать только то, что приближает к реальной картине мира.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k2-3">
+      <article class="slide green" data-screen-label="К2 · 3/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Угроза</span><span class="idx">03</span></header>
+          <div class="c-body">
+            <p class="lead sm">Почему навык атрофируется?</p>
+            <hr class="rule">
+            <p class="body">Алгоритмы поставляют готовые смыслы. Человек перестаёт создавать знания — и становится потребителем контента.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k2-4">
+      <article class="slide cream" data-screen-label="К2 · 4/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Бизнес-контекст</span><span class="idx">04</span></header>
+          <div class="c-body">
+            <p class="lead sm">Осмысление — это бизнес-процесс.</p>
+            <p class="body">Когда сотрудники не осмысляют, наверх уходят горы сырых данных без ценности. Руководитель парализован, решения принимаются по шаблону.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k2-5">
+      <article class="slide green" data-screen-label="К2 · 5/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <header class="c-top"><span class="kicker">Что даёт навык</span><span class="idx">05</span></header>
+          <div class="c-body">
+            <p class="lead sm">Натренированное осмысление даёт:</p>
+            <ul class="clist">
+              <li>Прогностическое мышление</li>
+              <li>Когнитивный суверенитет</li>
+              <li>Создание актуальных знаний в момент решения</li>
+            </ul>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k2-6">
+      <article class="slide gold" data-screen-label="К2 · 6/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <header class="c-top"><span class="kicker">Вывод</span><span class="idx">06</span></header>
+          <div class="c-body">
+            <p class="lead">Осмысление тренируется.</p>
+            <hr class="rule">
+            <p class="body">Технология ЦССУ академика А.В. Курбатова — научный подход к развитию этого навыка.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="foot-cta">Подробнее в Telegram →</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ КАРУСЕЛЬ 3 · ГАРМОНИЯ ============ -->
+<section class="band" style="--accent:#B5763A;--accent-soft:#C68A55;">
+  <div class="band-head">
+    <span class="band-no">03</span>
+    <span class="band-name">Гармония</span>
+    <span class="band-meta">6 слайдов</span>
+  </div>
+  <div class="row">
+
+    <div class="thumb" data-name="k3-1">
+      <article class="slide sand cover" data-screen-label="К3 · 1/6">
+        <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Риск-менеджмент</span><span class="idx">01</span></header>
+          <div class="c-body">
+            <p class="lead">Гармония — это не про йогу.</p>
+            <hr class="rule">
+            <p class="lead sm" style="color:#9C5E2C">Это фактор экономической устойчивости.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="swipe">Листайте <span class="arr">→</span></span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k3-2">
+      <article class="slide sand" data-screen-label="К3 · 2/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Суть</span><span class="idx">02</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="140" height="140" viewBox="0 0 100 100"><line x1="50" y1="18" x2="50" y2="80"/><line x1="24" y1="32" x2="76" y2="32"/><path d="M24,32 L14,54 a12,7 0 0 0 20,0 Z"/><path d="M76,32 L66,54 a12,7 0 0 0 20,0 Z"/><line x1="36" y1="82" x2="64" y2="82"/></svg></span>
+            <p class="lead sm">Что такое гармония в системе?</p>
+            <p class="body">Когда внутренние центры принятия решений работают согласованно — рационально, эмоционально, осознанно. Без внутренних противоречий.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k3-3">
+      <article class="slide green" data-screen-label="К3 · 3/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Риск</span><span class="idx">03</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="180" height="100" viewBox="0 0 120 70"><path d="M8,35 C18,20 26,50 38,35 C50,16 58,54 70,35 C84,10 94,60 112,35"/></svg></span>
+            <p class="lead sm">Негармоничная система — это риск.</p>
+            <p class="body">Ценностно-смысловые разрывы создают скрытые автоколебания. Решения несогласованны, замысел руководителя не удерживается.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k3-4">
+      <article class="slide sand" data-screen-label="К3 · 4/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Математика</span><span class="idx">04</span></header>
+          <div class="c-body">
+            <p class="lead sm">Формула устойчивости проста.</p>
+            <div class="rel">
+              <div class="rel-row"><span class="rel-up">↑</span> Скорость технологий</div>
+              <div class="step-bar"></div>
+              <div class="rel-row"><span class="rel-up">↑</span> Ценностно-смысловое поле</div>
+            </div>
+            <p class="body">Иначе система идёт к катастрофическому резонансу.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k3-5">
+      <article class="slide green" data-screen-label="К3 · 5/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <header class="c-top"><span class="kicker">Что даёт гармония</span><span class="idx">05</span></header>
+          <div class="c-body">
+            <p class="lead sm">Гармоничная система даёт:</p>
+            <ul class="clist">
+              <li>Синергию команды</li>
+              <li>Удержание замысла основателя</li>
+              <li>Кратный рост производительности и прибыли</li>
+            </ul>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k3-6">
+      <article class="slide brick" data-screen-label="К3 · 6/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <header class="c-top"><span class="kicker">Вывод</span><span class="idx">06</span></header>
+          <div class="c-body">
+            <p class="lead">Гармония — управляемый процесс.</p>
+            <hr class="rule">
+            <p class="body">Технология ЦССУ даёт конкретные инструменты ценностно-смыслового риск-менеджмента.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="foot-cta">Подробнее в Telegram →</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ КАРУСЕЛЬ 4 · РАЗРЫВЫ ============ -->
+<section class="band" style="--accent:#D4821A;--accent-soft:#E2A256;">
+  <div class="band-head">
+    <span class="band-no">04</span>
+    <span class="band-name">Ценностно-смысловые разрывы</span>
+    <span class="band-meta">6 слайдов</span>
+  </div>
+  <div class="row">
+
+    <div class="thumb" data-name="k4-1">
+      <article class="slide green cover" data-screen-label="К4 · 1/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Системный флаттер</span><span class="idx">01</span></header>
+          <div class="c-body">
+            <p class="lead">Ваша команда говорит одно.</p>
+            <hr class="rule">
+            <p class="lead sm" style="color:#D4821A">Делает другое. Думает третье.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="swipe">Листайте <span class="arr">→</span></span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k4-2">
+      <article class="slide cream" data-screen-label="К4 · 2/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Определение</span><span class="idx">02</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="160" height="110" viewBox="0 0 120 70"><line x1="10" y1="30" x2="48" y2="30"/><line x1="72" y1="44" x2="110" y2="44"/><path d="M48,30 l8,-9 M48,30 l8,9"/><path d="M72,44 l-8,-9 M72,44 l-8,9"/></svg></span>
+            <p class="lead sm">Что такое ценностно-смысловой разрыв?</p>
+            <p class="body">Критическое несовпадение векторов внутри системы: между менеджментом и сотрудниками, основателем и командой, словами и действиями.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k4-3">
+      <article class="slide green" data-screen-label="К4 · 3/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Где возникает</span><span class="idx">03</span></header>
+          <div class="c-body">
+            <p class="lead sm">Разрывы есть везде.</p>
+            <ul class="clist">
+              <li>Внутри человека — между «хочу» и «делаю»</li>
+              <li>Внутри команды — замысел не удерживается</li>
+              <li>Внутри семьи — кризис коммуникации</li>
+            </ul>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k4-4">
+      <article class="slide cream" data-screen-label="К4 · 4/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Чем опасен</span><span class="idx">04</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="180" height="100" viewBox="0 0 120 70"><path d="M8,35 C18,20 26,50 38,35 C50,16 58,54 70,35 C84,10 94,60 112,35"/></svg></span>
+            <p class="lead sm">Это не метафора. Это угроза.</p>
+            <p class="body">Разрывы запускают системный флаттер — скрытые разрушительные колебания. Они копятся подспудно — до катастрофы.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k4-5">
+      <article class="slide green" data-screen-label="К4 · 5/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <header class="c-top"><span class="kicker">Сигналы</span><span class="idx">05</span></header>
+          <div class="c-body">
+            <p class="lead sm">Как распознать разрыв?</p>
+            <ul class="clist">
+              <li>Саботаж без открытого конфликта</li>
+              <li>Несогласованные решения</li>
+              <li>Исчезающая инициатива</li>
+              <li>Выгорание без видимой причины</li>
+            </ul>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k4-6">
+      <article class="slide amber" data-screen-label="К4 · 6/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <header class="c-top"><span class="kicker">Решение</span><span class="idx">06</span></header>
+          <div class="c-body">
+            <p class="lead">Разрыв можно закрыть.</p>
+            <hr class="rule">
+            <p class="body">Технология ЦССУ — научный метод согласования ценностей в единое смысловое поле организации.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="foot-cta">Подробнее в Telegram →</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ КАРУСЕЛЬ 5 · АКАДЕМИК КУРБАТОВ ============ -->
+<section class="band" style="--accent:#C9A84C;--accent-soft:#D8BD72;">
+  <div class="band-head">
+    <span class="band-no">05</span>
+    <span class="band-name">Академик А.В. Курбатов</span>
+    <span class="band-meta">6 слайдов</span>
+  </div>
+  <div class="row">
+
+    <div class="thumb" data-name="k5-1">
+      <article class="slide green cover marble-strong" data-screen-label="К5 · 1/6">
+        <img class="cover-marble" src="assets/hero-texture.jpg" alt="">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Личность</span><span class="idx">01</span></header>
+          <div class="c-body">
+            <p class="lead sm">Есть учёные, которые изучают мир.</p>
+            <hr class="rule">
+            <p class="lead sm" style="color:var(--gold-soft)">А есть те, кто создаёт инструменты для его изменения.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="swipe">Листайте <span class="arr">→</span></span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k5-2">
+      <article class="slide parchment" data-screen-label="К5 · 2/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Кто он</span><span class="idx">02</span></header>
+          <div class="c-body">
+            <p class="lead sm">Андрей Всеволодович Курбатов</p>
+            <ul class="clist">
+              <li>Академик</li>
+              <li>Автор технологии ЦССУ</li>
+              <li>Основатель школы Точных гуманитарных наук</li>
+            </ul>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k5-3">
+      <article class="slide green" data-screen-label="К5 · 3/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Научная школа</span><span class="idx">03</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="140" height="140" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38"/><ellipse cx="50" cy="50" rx="16" ry="38"/><line x1="12" y1="50" x2="88" y2="50"/></svg></span>
+            <p class="lead sm">Точные гуманитарные науки.</p>
+            <p class="body">Законы природы человека исследуются с той же строгостью, что физические. Суверенный технологический задел России.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k5-4">
+      <article class="slide parchment" data-screen-label="К5 · 4/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          <header class="c-top"><span class="kicker">Главный вклад</span><span class="idx">04</span></header>
+          <div class="c-body">
+            <span class="ic"><svg width="180" height="100" viewBox="0 0 120 70"><path d="M8,35 C18,20 26,50 38,35 C50,16 58,54 70,35 C84,10 94,60 112,35"/></svg></span>
+            <p class="lead sm">Системный социальный флаттер.</p>
+            <p class="body">Курбатов первым дал научное определение разрушительным процессам внутри организаций и личности — и создал технологию защиты.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k5-5">
+      <article class="slide green" data-screen-label="К5 · 5/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          <header class="c-top"><span class="kicker">Масштаб</span><span class="idx">05</span></header>
+          <div class="c-body">
+            <p class="lead sm">ЦССУ — это не тренинг.</p>
+            <div class="steps">
+              <div class="step"><span class="dot">1</span><span class="lbl">Диагностика ценностей</span></div>
+              <div class="step-bar"></div>
+              <div class="step"><span class="dot">2</span><span class="lbl">Смыслосинтез</span></div>
+              <div class="step-bar"></div>
+              <div class="step"><span class="dot">3</span><span class="lbl">Созидательное действие</span></div>
+            </div>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+    <div class="thumb" data-name="k5-6">
+      <article class="slide gold" data-screen-label="К5 · 6/6">
+        <div class="pad">
+          <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <header class="c-top"><span class="kicker">Знакомство</span><span class="idx">06</span></header>
+          <div class="c-body">
+            <p class="lead">Познакомиться с технологией.</p>
+            <hr class="rule">
+            <p class="body">Авторское обучение. Онлайн. Индивидуально и в группе.</p>
+          </div>
+          <footer class="c-foot">
+            <img class="mark m-gold" src="assets/monogram-gold.png" alt=""><img class="mark m-dark" src="assets/monogram-dark.png" alt="">
+            <span class="foot-wm">СМЫСЛОСИНТЕЗ</span><span class="foot-cta">Подробнее в Telegram →</span>
+          </footer>
+        </div>
+        <img class="wm-mono" src="assets/monogram-gold.png" alt="">
+      </article>
+      <div class="hint">Открыть · скачать</div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="page-foot">Смыслосинтез® · Научная школа академика А.В. Курбатова · Технология ЦССУ</footer>
+
+<!-- ===== Lightbox ===== -->
+<div class="lb" id="lb">
+  <button class="lb-close" id="lbClose" aria-label="Закрыть">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Назад">‹</button>
+  <div class="lb-stage">
+    <div class="lb-thumb" id="lbThumb"></div>
+    <div class="lb-bottom"><span class="lb-cap" id="lbCap"></span><button class="btn" id="lbDl">Скачать PNG</button></div>
+  </div>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Вперёд">›</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const items = Array.from(document.querySelectorAll('.thumb'));
+  let cur = 0;
+  const lb = document.getElementById('lb'), lbThumb = document.getElementById('lbThumb'), lbCap = document.getElementById('lbCap'), toast = document.getElementById('toast');
+  const W = 1080, H = 1350;
+  function fitScale(){ const vh = window.innerHeight, vw = window.innerWidth; return Math.min((vh - 220) / H, (vw - 260) / W, 0.82); }
+  function renderLb(){
+    const orig = items[cur].querySelector('.slide');
+    const slide = orig.cloneNode(true);
+    const cs = getComputedStyle(orig);
+    slide.style.setProperty('--accent', cs.getPropertyValue('--accent'));
+    slide.style.setProperty('--accent-soft', cs.getPropertyValue('--accent-soft'));
+    const s = fitScale();
+    slide.style.transform = 'scale(' + s + ')';
+    lbThumb.style.width = (W * s) + 'px'; lbThumb.style.height = (H * s) + 'px';
+    lbThumb.innerHTML = ''; lbThumb.appendChild(slide);
+    lbCap.textContent = (cur + 1) + ' / ' + items.length;
+  }
+  function open(i){ cur = i; lb.classList.add('open'); renderLb(); }
+  function close(){ lb.classList.remove('open'); }
+  function go(d){ cur = (cur + d + items.length) % items.length; renderLb(); }
+  items.forEach((t, i) => t.addEventListener('click', () => open(i)));
+  document.getElementById('lbClose').addEventListener('click', close);
+  document.getElementById('lbPrev').addEventListener('click', () => go(-1));
+  document.getElementById('lbNext').addEventListener('click', () => go(1));
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+  window.addEventListener('keydown', e => { if (!lb.classList.contains('open')) return; if (e.key === 'Escape') close(); if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); });
+  window.addEventListener('resize', () => { if (lb.classList.contains('open')) renderLb(); });
+  function showToast(m){ toast.textContent = m; toast.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>toast.classList.remove('show'), 2600); }
+  async function exportNode(thumb){ const node = thumb.querySelector('.slide'); if (!window.htmlToImage){ showToast('Не удалось загрузить экспорт'); return null; } return await htmlToImage.toPng(node, { width:W, height:H, pixelRatio:1, cacheBust:true, style:{ transform:'none' } }); }
+  function download(url, name){ const a = document.createElement('a'); a.href = url; a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove(); }
+  document.getElementById('lbDl').addEventListener('click', async () => { showToast('Готовлю PNG…'); const u = await exportNode(items[cur]); if (u){ download(u, items[cur].dataset.name || ('slide-' + (cur+1))); showToast('Сохранено'); } });
+  document.getElementById('dlAll').addEventListener('click', async () => { showToast('Готовлю ' + items.length + ' PNG…'); for (let i = 0; i < items.length; i++){ const u = await exportNode(items[i]); if (u) download(u, items[i].dataset.name || ('slide-' + (i+1))); await new Promise(r => setTimeout(r, 450)); } showToast('Готово · ' + items.length + ' файлов'); });
+})();
+</script>
+
+</body>
+</html>
